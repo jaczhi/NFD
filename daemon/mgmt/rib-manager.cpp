@@ -65,6 +65,8 @@ RibManager::RibManager(rib::Rib& rib, ndn::Face& face, ndn::KeyChain& keyChain,
     [this] (auto&&, auto&&, auto&&... args) { registerEntry(std::forward<decltype(args)>(args)...); });
   registerCommandHandler<ndn::nfd::RibUnregisterCommand>("unregister",
     [this] (auto&&, auto&&, auto&&... args) { unregisterEntry(std::forward<decltype(args)>(args)...); });
+  registerCommandHandler<ndn::nfd::RibAnnounceCommand>("announce",
+    [this] (auto&&, auto&&, auto&&... args) { announceEntry(std::forward<decltype(args)>(args)...); });
   registerStatusDatasetHandler("list",
     [this] (auto&&, auto&&, auto&&... args) { listEntries(std::forward<decltype(args)>(args)...); });
 }
@@ -260,6 +262,50 @@ RibManager::unregisterEntry(const Interest& interest, ControlParameters paramete
   route.origin = parameters.getOrigin();
 
   beginRemoveRoute(parameters.getName(), route, [] (auto&&...) {});
+}
+
+void
+RibManager::announceEntry(const Interest& interest, ControlParameters parameters,
+                          const ndn::mgmt::CommandContinuation& done)
+{
+  auto appParameters = interest.getApplicationParameters();
+  if (appParameters.size() == 0) {
+    done(ControlResponse(400, "PrefixAnnouncement object missing"));
+    return;
+  }
+
+  auto data = Data(appParameters);
+  auto prefixAnnouncement = ndn::PrefixAnnouncement(data);
+
+  if (prefixAnnouncement.getAnnouncedName().size() > Fib::getMaxDepth()) {
+    done(ControlResponse(414, "Route prefix cannot exceed " + std::to_string(Fib::getMaxDepth()) +
+                              " components"));
+    return;
+  }
+
+  // Prepare parameters for response
+  parameters.setFaceId(0);
+  setFaceForSelfRegistration(interest, parameters);
+  parameters.setName(prefixAnnouncement.getAnnouncedName());
+
+  Route route(prefixAnnouncement, parameters.getFaceId());
+
+  parameters.setOrigin(route.origin);
+  parameters.setCost(route.cost);
+  parameters.setFlags(route.flags);
+  parameters.setExpirationPeriod(time::duration_cast<time::milliseconds>(*route.expires - time::steady_clock::now()));
+
+  m_paValidator.validate(data,
+   [=] (const Data&) {
+     // Respond since command is valid and authorized
+     done(ControlResponse(200, "Success").setBody(parameters.wireEncode()));
+
+     beginAddRoute(prefixAnnouncement.getAnnouncedName(), std::move(route), std::nullopt, [] (RibUpdateResult) {});
+   },
+   [=] (const Data&, ndn::security::ValidationError err) {
+     done(ControlResponse(403, "Validation error: " + err.getInfo()));
+   }
+  );
 }
 
 void

@@ -209,6 +209,12 @@ private: // management Dispatcher related
   unregisterEntry(const Interest& interest, ControlParameters parameters,
                   const ndn::mgmt::CommandContinuation& done);
 
+  /** \brief Serve rib/announce command.
+   */
+  void
+  announceEntry(const Interest& interest, ControlParameters parameters,
+                const ndn::mgmt::CommandContinuation& done);
+
   /** \brief Serve rib/list dataset.
    */
   void
