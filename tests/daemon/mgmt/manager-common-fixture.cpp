@@ -52,6 +52,24 @@ InterestSignerFixture::makeControlCommandRequest(Name commandName,
   NDN_CXX_UNREACHABLE;
 }
 
+Interest
+InterestSignerFixture::makeControlCommandRequestPrefixAnn(Name commandName,
+                                   const ndn::PrefixAnnouncement& prefixAnnouncement,
+                                   ndn::security::SignedInterestFormat format,
+                                   const Name& identity)
+{
+  const Block& prefixAnnouncementBlock = prefixAnnouncement.getData().value().wireEncode();
+  //ControlParameters params;
+  //commandName.append(tlv::GenericNameComponent, params.wireEncode());
+  commandName.appendParametersSha256Digest(ndn::util::Sha256().computeDigest(prefixAnnouncementBlock));
+  // TODO accomodate V02
+
+  Interest interest(commandName);
+  interest.setApplicationParameters(prefixAnnouncementBlock);
+  m_signer.makeSignedInterest(interest, ndn::security::signingByIdentity(identity));
+  return interest;
+}
+
 void
 ManagerCommonFixture::setTopPrefix()
 {

@@ -268,7 +268,7 @@ void
 RibManager::announceEntry(const Interest& interest, ControlParameters parameters,
                           const ndn::mgmt::CommandContinuation& done)
 {
-  auto appParameters = interest.getApplicationParameters();
+  auto appParameters = interest.getApplicationParameters().blockFromValue();
   if (appParameters.size() == 0) {
     done(ControlResponse(400, "PrefixAnnouncement object missing"));
     return;

@@ -35,6 +35,7 @@
 
 #include <ndn-cxx/security/interest-signer.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
+#include <ndn-cxx/util/sha256.hpp>
 
 namespace nfd::tests {
 
@@ -58,6 +59,21 @@ protected:
                             const ControlParameters& params = {},
                             ndn::security::SignedInterestFormat format = ndn::security::SignedInterestFormat::V03,
                             const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
+
+
+  /**
+   * TODO docs, figure out a way to overload without issue
+   * @param commandName
+   * @param params
+   * @param format
+   * @param identity
+   * @return
+   */
+  Interest
+  makeControlCommandRequestPrefixAnn(Name commandName,
+                                     const ndn::PrefixAnnouncement& prefixAnnouncement,
+                                     ndn::security::SignedInterestFormat format = ndn::security::SignedInterestFormat::V03,
+                                     const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
 
 protected:
   static inline const Name DEFAULT_COMMAND_SIGNER_IDENTITY{"/InterestSignerFixture-identity"};
