@@ -35,7 +35,6 @@
 
 #include <ndn-cxx/security/interest-signer.hpp>
 #include <ndn-cxx/util/dummy-client-face.hpp>
-#include <ndn-cxx/util/sha256.hpp>
 
 namespace nfd::tests {
 
@@ -62,17 +61,15 @@ protected:
 
 
   /**
-   * TODO docs, figure out a way to overload without issue
-   * @param commandName
-   * @param params
-   * @param format
-   * @param identity
-   * @return
+   * \brief Create a ControlCommand request for a Prefix Announcement. Per specification, Prefix Announcements use
+   * Signed Interest format 0.3 only.
+   * \param commandName Command name including prefix, such as `/localhost/nfd/rib/announce`
+   * \param prefixAnnouncement Prefix Announcement object
+   * \param identity Signing identity
    */
   Interest
   makeControlCommandRequestPrefixAnn(Name commandName,
                                      const ndn::PrefixAnnouncement& prefixAnnouncement,
-                                     ndn::security::SignedInterestFormat format = ndn::security::SignedInterestFormat::V03,
                                      const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
 
 protected:
