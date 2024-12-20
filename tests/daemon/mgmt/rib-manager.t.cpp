@@ -485,7 +485,11 @@ BOOST_AUTO_TEST_CASE(Basic)
 
   BOOST_REQUIRE_EQUAL(m_responses.size(), 2);
   auto paramsRegister    = makeRegisterParameters("/test-prefix-announce", 1234);
-  paramsRegister.setOrigin(ndn::nfd::ROUTE_ORIGIN_PREFIXANN).setCost(2048).setFlags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT).setExpirationPeriod(1000_ms);
+  paramsRegister.setOrigin(ndn::nfd::ROUTE_ORIGIN_PREFIXANN)
+                .setCost(2048)
+                .setFlags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT)
+                .setExpirationPeriod(1000_ms);
+
   BOOST_CHECK_EQUAL(checkResponse(0, commandAnnounce.getName(), makeResponse(200, "Success", paramsRegister)),
   CheckResponseResult::OK);
   BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "Success", paramsUnregister)),
