@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2022,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -50,6 +50,20 @@ InterestSignerFixture::makeControlCommandRequest(Name commandName,
     }
   }
   NDN_CXX_UNREACHABLE;
+}
+
+Interest
+InterestSignerFixture::makeControlCommandRequestPrefixAnn(Name commandName,
+                                                          const ndn::PrefixAnnouncement& prefixAnnouncement,
+                                                          const Name& identity)
+{
+  const Block& prefixAnnouncementBlock = prefixAnnouncement.getData().value().wireEncode();
+
+  Interest interest(commandName);
+  interest.setApplicationParameters(prefixAnnouncementBlock);
+  m_signer.makeSignedInterest(interest, ndn::security::signingByIdentity(identity));
+
+  return interest;
 }
 
 void

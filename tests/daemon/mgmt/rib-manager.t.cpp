@@ -117,6 +117,14 @@ getLocalhopValidatorConfigSection()
   return makeSection(config);
 }
 
+static ConfigSection
+getPaValidatorConfigSection()
+{
+  ConfigSection section;
+  section.put("trust-anchor.type", "any");
+  return section;
+}
+
 class RibManagerFixture : public ManagerCommonFixture
 {
 public:
@@ -150,6 +158,8 @@ public:
     else {
       m_manager.disableLocalhop();
     }
+
+    m_manager.applyPaConfig(getPaValidatorConfigSection(), "testPa");
 
     registerWithNfd();
 
@@ -454,6 +464,45 @@ BOOST_AUTO_TEST_CASE(NameTooLong)
 }
 
 BOOST_AUTO_TEST_SUITE_END() // RegisterUnregister
+
+BOOST_FIXTURE_TEST_SUITE(PrefixAnnounce, LocalhostAuthorizedRibManagerFixture)
+
+BOOST_AUTO_TEST_CASE(Basic)
+{
+  ndn::PrefixAnnouncement prefixAnnouncement = signPrefixAnn(makePrefixAnn("/test-prefix-announce", 1000_ms, std::nullopt),
+  m_keyChain);
+
+  auto commandAnnounce = makeControlCommandRequestPrefixAnn("/localhost/nfd/rib/announce", prefixAnnouncement);
+  commandAnnounce.setTag(make_shared<lp::IncomingFaceIdTag>(1234));
+
+  auto paramsUnregister  = makeUnregisterParameters("/test-prefix-announce", 1234);
+  paramsUnregister.setOrigin(ndn::nfd::ROUTE_ORIGIN_PREFIXANN);
+  auto commandUnregister = makeControlCommandRequest("/localhost/nfd/rib/unregister", paramsUnregister);
+  commandUnregister.setTag(make_shared<lp::IncomingFaceIdTag>(9527));
+
+  receiveInterest(commandAnnounce);
+  receiveInterest(commandUnregister);
+
+  BOOST_REQUIRE_EQUAL(m_responses.size(), 2);
+  auto paramsRegister    = makeRegisterParameters("/test-prefix-announce", 1234);
+  paramsRegister.setOrigin(ndn::nfd::ROUTE_ORIGIN_PREFIXANN)
+                .setCost(2048)
+                .setFlags(ndn::nfd::ROUTE_FLAG_CHILD_INHERIT)
+                .setExpirationPeriod(1000_ms);
+
+  BOOST_CHECK_EQUAL(checkResponse(0, commandAnnounce.getName(), makeResponse(200, "Success", paramsRegister)),
+  CheckResponseResult::OK);
+  BOOST_CHECK_EQUAL(checkResponse(1, commandUnregister.getName(), makeResponse(200, "Success", paramsUnregister)),
+  CheckResponseResult::OK);
+
+  BOOST_REQUIRE_EQUAL(m_fibUpdater.updates.size(), 2);
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.front(),
+  rib::FibUpdate::createAddUpdate("/test-prefix-announce", 1234, 2048));
+  BOOST_CHECK_EQUAL(m_fibUpdater.updates.back(),
+  rib::FibUpdate::createRemoveUpdate("/test-prefix-announce", 1234));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // PrefixAnnounce
 
 BOOST_FIXTURE_TEST_CASE(RibDataset, UnauthorizedRibManagerFixture)
 {

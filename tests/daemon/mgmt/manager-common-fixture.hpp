@@ -1,6 +1,6 @@
 /* -*- Mode:C++; c-file-style:"gnu"; indent-tabs-mode:nil; -*- */
 /*
- * Copyright (c) 2014-2023,  Regents of the University of California,
+ * Copyright (c) 2014-2024,  Regents of the University of California,
  *                           Arizona Board of Regents,
  *                           Colorado State University,
  *                           University Pierre & Marie Curie, Sorbonne University,
@@ -58,6 +58,19 @@ protected:
                             const ControlParameters& params = {},
                             ndn::security::SignedInterestFormat format = ndn::security::SignedInterestFormat::V03,
                             const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
+
+
+  /**
+   * \brief Create a ControlCommand request for a Prefix Announcement. Per specification, Prefix Announcements use
+   * Signed Interest format 0.3 only.
+   * \param commandName Command name including prefix, such as `/localhost/nfd/rib/announce`
+   * \param prefixAnnouncement Prefix Announcement object
+   * \param identity Signing identity
+   */
+  Interest
+  makeControlCommandRequestPrefixAnn(Name commandName,
+                                     const ndn::PrefixAnnouncement& prefixAnnouncement,
+                                     const Name& identity = DEFAULT_COMMAND_SIGNER_IDENTITY);
 
 protected:
   static inline const Name DEFAULT_COMMAND_SIGNER_IDENTITY{"/InterestSignerFixture-identity"};
